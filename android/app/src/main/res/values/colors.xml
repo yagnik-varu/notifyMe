@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Launcher-icon background — matches COLORS.accent in src/theme.ts. -->
+<resources>
+    <color name="accent">#5B3FB0</color>
+</resources>
