@@ -7,6 +7,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.PowerManager
 import android.provider.Settings
+import android.view.HapticFeedbackConstants
 import androidx.work.Constraints
 import androidx.work.Data
 import androidx.work.NetworkType
@@ -143,6 +144,26 @@ class NotifyMeModule(private val reactContext: ReactApplicationContext) :
     fun clearHistory() = ConfigStore.clearHistory(reactContext)
 
     /** Fire a one-off test webhook through the same WorkManager path a real call uses. */
+    @ReactMethod
+    fun restoreHistory(json: String) = ConfigStore.restoreHistory(reactContext, json)
+
+    /**
+     * Light system haptic for UI feedback. Uses View.performHapticFeedback (no VIBRATE
+     * permission, respects the user's touch-feedback setting) rather than a raw vibration.
+     */
+    @ReactMethod
+    fun haptic(kind: String) {
+        val view = reactContext.currentActivity?.window?.decorView ?: return
+        val constant = when (kind) {
+            "confirm" -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
+                HapticFeedbackConstants.CONFIRM else HapticFeedbackConstants.VIRTUAL_KEY
+            "reject" -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
+                HapticFeedbackConstants.REJECT else HapticFeedbackConstants.LONG_PRESS
+            else -> HapticFeedbackConstants.CLOCK_TICK
+        }
+        view.post { view.performHapticFeedback(constant) }
+    }
+
     @ReactMethod
     fun sendTest() {
         val data = Data.Builder()

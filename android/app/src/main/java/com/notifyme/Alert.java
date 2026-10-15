@@ -26,6 +26,15 @@ public final class Alert {
         return new Alert(TEST, "", timestamp);
     }
 
+    /** Stable name for payloads and history: "incoming" | "missed" | "test". */
+    public String kindName() {
+        switch (kind) {
+            case INCOMING: return "incoming";
+            case MISSED:   return "missed";
+            default:       return "test";
+        }
+    }
+
     public String timeStr() {
         return WebhookWorker.timeOf(timestamp);
     }

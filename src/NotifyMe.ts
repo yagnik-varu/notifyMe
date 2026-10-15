@@ -1,13 +1,45 @@
 import {NativeModules} from 'react-native';
 
 // Platform + override constants — must match ConfigStore.java exactly.
+// color tints the destination tile; placeholder is the example URL shown when empty.
 export const PLATFORMS = [
-  {value: 'slack', label: 'Slack'},
-  {value: 'discord', label: 'Discord'},
-  {value: 'teams', label: 'Microsoft Teams'},
-  {value: 'cliq', label: 'Zoho Cliq'},
-  {value: 'generic', label: 'Generic'},
+  {
+    value: 'slack',
+    label: 'Slack',
+    color: '#E01E5A',
+    placeholder: 'https://hooks.slack.com/services/...',
+  },
+  {
+    value: 'discord',
+    label: 'Discord',
+    color: '#5865F2',
+    placeholder: 'https://discord.com/api/webhooks/...',
+  },
+  {
+    value: 'teams',
+    label: 'Teams',
+    color: '#6264A7',
+    placeholder: 'https://<tenant>.webhook.office.com/...',
+  },
+  {
+    value: 'cliq',
+    label: 'Zoho Cliq',
+    color: '#0EA5E9',
+    placeholder: 'https://cliq.zoho.com/api/v2/bots/<bot>/incoming',
+  },
+  {
+    value: 'generic',
+    label: 'Generic',
+    color: '#64748B',
+    placeholder: 'https://example.com/webhook',
+  },
 ] as const;
+
+export type PlatformInfo = (typeof PLATFORMS)[number];
+
+export function platformInfo(value: string): PlatformInfo {
+  return PLATFORMS.find(p => p.value === value) ?? PLATFORMS[0];
+}
 
 export const OVERRIDE = {
   NONE: 'NONE',
@@ -46,6 +78,7 @@ export interface Battery {
 
 export interface HistoryEntry {
   label: string;
+  kind?: 'incoming' | 'missed' | 'test'; // absent on entries saved before this field existed
   timestamp: number;
   success: boolean;
   detail: string;
@@ -68,6 +101,8 @@ type Native = {
   setOverride(mode: string, untilMs: number): void;
   clearOverride(): void;
   clearHistory(): void;
+  restoreHistory(json: string): void;
+  haptic(kind: string): void;
   sendTest(): void;
   requestScreeningRole(): Promise<string>;
 };
@@ -97,6 +132,9 @@ const api = {
   setOverride: (mode: string, untilMs: number) => Native.setOverride(mode, untilMs),
   clearOverride: () => Native.clearOverride(),
   clearHistory: () => Native.clearHistory(),
+  restoreHistory: (entries: HistoryEntry[]) => Native.restoreHistory(JSON.stringify(entries)),
+  /** System touch feedback: 'confirm' | 'reject' | 'tick'. No-op if unavailable. */
+  haptic: (kind: 'confirm' | 'reject' | 'tick') => Native.haptic?.(kind),
   sendTest: () => Native.sendTest(),
   requestScreeningRole: () => Native.requestScreeningRole(),
 };

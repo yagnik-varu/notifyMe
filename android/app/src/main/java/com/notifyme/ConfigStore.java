@@ -152,12 +152,13 @@ public final class ConfigStore {
     }
 
     /** Prepend a new entry (newest first) and cap the list at MAX_HISTORY. */
-    public static void appendHistory(Context ctx, String label, long timestamp,
+    public static void appendHistory(Context ctx, String label, String kind, long timestamp,
                                      boolean success, String detail) {
         try {
             JSONArray existing = new JSONArray(getHistoryJson(ctx));
             JSONObject entry = new JSONObject();
             entry.put("label", label);
+            entry.put("kind", kind);
             entry.put("timestamp", timestamp);
             entry.put("success", success);
             entry.put("detail", detail);
@@ -176,5 +177,26 @@ public final class ConfigStore {
 
     public static void clearHistory(Context ctx) {
         prefs(ctx).edit().putString(KEY_HISTORY, "[]").apply();
+    }
+
+    /**
+     * Undo for clearHistory: put the cleared entries back behind anything recorded since
+     * the clear (newest stays first), capped at MAX_HISTORY.
+     */
+    public static void restoreHistory(Context ctx, String clearedJson) {
+        try {
+            JSONArray current = new JSONArray(getHistoryJson(ctx));
+            JSONArray cleared = new JSONArray(clearedJson);
+            JSONArray merged = new JSONArray();
+            for (int i = 0; i < current.length() && merged.length() < MAX_HISTORY; i++) {
+                merged.put(current.get(i));
+            }
+            for (int i = 0; i < cleared.length() && merged.length() < MAX_HISTORY; i++) {
+                merged.put(cleared.get(i));
+            }
+            prefs(ctx).edit().putString(KEY_HISTORY, merged.toString()).apply();
+        } catch (JSONException ignored) {
+            // Best-effort, like appendHistory.
+        }
     }
 }

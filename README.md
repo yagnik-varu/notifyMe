@@ -34,11 +34,13 @@ curl -i -X POST "https://cliq.mycompany.com/api/v2/bots/notify/incoming?zapikey=
   -d '{"kind":"test","title":"✅ Test","caller":"","time":"20:00","text":"Your webhook works."}'
 ```
 
-**Troubleshooting** (the app's *Recent* list shows the HTTP code on failure):
-- `HTTP 401`: wrong or disabled token.
-- `HTTP 404`: wrong URL or bot name.
-- `2xx` but nothing in Cliq: the handler isn't saved, or isn't returning a message.
-- Fails only with an email set: clear **Cliq user email** and try again.
+**Troubleshooting.** *Send test* shows the result right under the button, and failed alerts appear in **Activity** with the reason:
+- *"Cliq didn't accept the webhook token"*: copy the token again from your bot.
+- *"Bot not found"*: check the endpoint URL and bot name.
+- *"Cliq couldn't read the message"*: the Notify-Me handler isn't saved in your bot.
+- *Test delivered* but nothing in Cliq: the handler isn't returning a message, or the email doesn't match a bot subscriber. Clear **Your Cliq email** and try again.
+
+Errors that a retry can't fix (bad token, wrong URL) are reported straight away. Network problems are retried in the background.
 
 ---
 

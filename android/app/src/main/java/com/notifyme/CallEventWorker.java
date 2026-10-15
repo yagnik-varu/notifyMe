@@ -77,22 +77,7 @@ public class CallEventWorker extends Worker {
         String label = resolveLabel(ctx, entry, screenedNumber, legacyNumber);
         Alert alert = new Alert(
                 MODE_ENDED.equals(mode) ? Alert.MISSED : Alert.INCOMING, label, ringTs);
-        String body = PlatformFormatter.payload(ctx, alert);
-
-        try {
-            int code = WebhookWorker.postBody(ctx, body);
-            if (code >= 200 && code < 300) {
-                WebhookWorker.recordSuccess(ctx, label, ringTs);
-                return Result.success();
-            }
-            if (getRunAttemptCount() < WebhookWorker.MAX_ATTEMPTS) return Result.retry();
-            WebhookWorker.recordFailure(ctx, label, ringTs, "HTTP " + code);
-            return Result.failure();
-        } catch (Exception e) {
-            if (getRunAttemptCount() < WebhookWorker.MAX_ATTEMPTS) return Result.retry();
-            WebhookWorker.recordFailure(ctx, label, ringTs, WebhookWorker.msgOf(e));
-            return Result.failure();
-        }
+        return WebhookWorker.deliver(ctx, alert, label, getRunAttemptCount());
     }
 
     /**

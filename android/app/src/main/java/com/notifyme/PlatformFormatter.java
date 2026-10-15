@@ -68,11 +68,8 @@ public final class PlatformFormatter {
                 ? "Your webhook works."
                 : "*" + alert.shownCaller() + "* at " + alert.timeStr();
 
-        String kind = alert.kind == Alert.INCOMING ? "incoming"
-                : alert.kind == Alert.MISSED ? "missed" : "test";
-
         JSONObject body = new JSONObject()
-                .put("kind", kind)
+                .put("kind", alert.kindName())
                 .put("title", alert.title())
                 .put("caller", alert.caller)
                 .put("time", alert.timeStr())
