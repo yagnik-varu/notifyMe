@@ -77,7 +77,7 @@ public class CallEventWorker extends Worker {
         String label = resolveLabel(ctx, entry, screenedNumber, legacyNumber);
         Alert alert = new Alert(
                 MODE_ENDED.equals(mode) ? Alert.MISSED : Alert.INCOMING, label, ringTs);
-        String body = PlatformFormatter.payload(ConfigStore.getPlatform(ctx), alert);
+        String body = PlatformFormatter.payload(ctx, alert);
 
         try {
             int code = WebhookWorker.postBody(ctx, body);

@@ -1,0 +1,19 @@
+// Notify-Me → Zoho Cliq: bot Incoming Webhook Handler.
+// Paste into your bot: Bots & Tools → Bots → <your bot> → Edit Handlers →
+// Incoming Webhook Handler, then Save.
+//
+// Notify-Me POSTs JSON: {kind, title, caller, time, text, userids?}
+//   kind    "incoming" | "missed" | "test"
+//   title   "📞 Incoming call" / "📵 Missed call" / "✅ Test"
+//   text    ready-to-show Cliq markdown, e.g. "*Jane (+1555…)* at 14:05"
+//   userids recipient email (only when set in the app)
+data = body.toMap();
+message = Map();
+message.put("text",ifnull(data.get("text"),""));
+message.put("card",{"title":ifnull(data.get("title"),"Call alert"),"theme":"modern-inline"});
+userids = ifnull(data.get("userids"),"");
+if(userids != "")
+{
+	message.put("userids",userids);
+}
+return message;

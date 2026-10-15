@@ -5,6 +5,7 @@ export const PLATFORMS = [
   {value: 'slack', label: 'Slack'},
   {value: 'discord', label: 'Discord'},
   {value: 'teams', label: 'Microsoft Teams'},
+  {value: 'cliq', label: 'Zoho Cliq'},
   {value: 'generic', label: 'Generic'},
 ] as const;
 
@@ -17,6 +18,8 @@ export const OVERRIDE = {
 export interface Config {
   url: string;
   platform: string;
+  cliqUser: string;
+  cliqToken: string;
   masterEnabled: boolean;
   startMin: number;
   endMin: number;
@@ -57,6 +60,8 @@ type Native = {
   requestBatteryExemption(): void;
   setWebhookUrl(url: string): void;
   setPlatform(platform: string): void;
+  setCliqUser(user: string): void;
+  setCliqToken(token: string): void;
   setMasterEnabled(enabled: boolean): void;
   setSchedule(startMin: number, endMin: number): void;
   setDaysMask(mask: number): void;
@@ -84,6 +89,8 @@ const api = {
   },
   setWebhookUrl: (url: string) => Native.setWebhookUrl(url),
   setPlatform: (p: string) => Native.setPlatform(p),
+  setCliqUser: (u: string) => Native.setCliqUser(u),
+  setCliqToken: (t: string) => Native.setCliqToken(t),
   setMasterEnabled: (e: boolean) => Native.setMasterEnabled(e),
   setSchedule: (s: number, e: number) => Native.setSchedule(s, e),
   setDaysMask: (m: number) => Native.setDaysMask(m),

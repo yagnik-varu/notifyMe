@@ -20,7 +20,9 @@ public final class ConfigStore {
 
     // Destination
     private static final String KEY_URL = "webhook_url";
-    private static final String KEY_PLATFORM = "platform"; // "slack" | "teams" | "generic"
+    private static final String KEY_PLATFORM = "platform"; // "slack" | "discord" | "teams" | "cliq" | "generic"
+    private static final String KEY_CLIQ_USER = "cliq_user"; // Cliq recipient email/ZUID; "" = none
+    private static final String KEY_CLIQ_TOKEN = "cliq_token"; // Cliq webhook token, sent as ?zapikey=
 
     // Master
     private static final String KEY_MASTER = "master_enabled";
@@ -40,6 +42,7 @@ public final class ConfigStore {
     public static final String PLATFORM_SLACK = "slack";
     public static final String PLATFORM_TEAMS = "teams";
     public static final String PLATFORM_DISCORD = "discord";
+    public static final String PLATFORM_CLIQ = "cliq";
     public static final String PLATFORM_GENERIC = "generic";
 
     public static final String OVERRIDE_NONE = "NONE";
@@ -68,6 +71,22 @@ public final class ConfigStore {
 
     public static void setPlatform(Context ctx, String platform) {
         prefs(ctx).edit().putString(KEY_PLATFORM, platform).apply();
+    }
+
+    public static String getCliqUser(Context ctx) {
+        return prefs(ctx).getString(KEY_CLIQ_USER, "");
+    }
+
+    public static void setCliqUser(Context ctx, String user) {
+        prefs(ctx).edit().putString(KEY_CLIQ_USER, user == null ? "" : user.trim()).apply();
+    }
+
+    public static String getCliqToken(Context ctx) {
+        return prefs(ctx).getString(KEY_CLIQ_TOKEN, "");
+    }
+
+    public static void setCliqToken(Context ctx, String token) {
+        prefs(ctx).edit().putString(KEY_CLIQ_TOKEN, token == null ? "" : token.trim()).apply();
     }
 
     // ---- Master + sources ----

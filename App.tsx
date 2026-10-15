@@ -61,6 +61,8 @@ export default function App() {
   const [battery, setBattery] = useState<Battery | null>(null);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [url, setUrl] = useState('');
+  const [cliqUser, setCliqUser] = useState('');
+  const [cliqToken, setCliqToken] = useState('');
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
@@ -73,6 +75,8 @@ export default function App() {
     ]);
     setCfg(c);
     setUrl(c.url);
+    setCliqUser(c.cliqUser);
+    setCliqToken(c.cliqToken);
     setStatus(st);
     setScreening(sc);
     setBattery(bat);
@@ -108,11 +112,28 @@ export default function App() {
     );
   }
 
-  const urlDirty = url.trim() !== cfg.url;
+  const isCliq = cfg.platform === 'cliq';
+  const webhookDirty =
+    url.trim() !== cfg.url ||
+    cliqUser.trim() !== cfg.cliqUser ||
+    cliqToken.trim() !== cfg.cliqToken;
 
   const saveWebhook = () => {
-    NotifyMe.setWebhookUrl(url.trim());
-    Alert.alert('Saved', 'Webhook URL saved.');
+    const u = url.trim();
+    NotifyMe.setWebhookUrl(u);
+    const token = cliqToken.trim();
+    NotifyMe.setCliqUser(cliqUser.trim());
+    NotifyMe.setCliqToken(token);
+    if (isCliq && u.length > 0 && !u.includes('/bots/')) {
+      Alert.alert(
+        'Saved — check the URL',
+        'Use the bot endpoint from Cliq, e.g. https://cliq.zoho.com/api/v2/bots/<bot>/incoming.',
+      );
+    } else if (isCliq && token.length === 0 && !u.includes('zapikey=')) {
+      Alert.alert('Saved — token missing', 'Add the webhook token from your Cliq bot.');
+    } else {
+      Alert.alert('Saved', 'Webhook settings saved.');
+    }
     reread();
   };
 
@@ -256,7 +277,7 @@ export default function App() {
             style={styles.input}
             value={url}
             onChangeText={setUrl}
-            placeholder="https://hooks.slack.com/services/..."
+            placeholder={PLACEHOLDERS[cfg.platform] ?? PLACEHOLDERS.slack}
             placeholderTextColor={COLORS.muted}
             autoCapitalize="none"
             autoCorrect={false}
@@ -265,8 +286,38 @@ export default function App() {
           />
           <CardLabel>Destination</CardLabel>
           <PlatformSelector value={cfg.platform} onChange={onPlatform} />
+          {isCliq && (
+            <>
+              <View style={{height: 12}} />
+              <CardLabel>Webhook token</CardLabel>
+              <TextInput
+                style={styles.input}
+                value={cliqToken}
+                onChangeText={setCliqToken}
+                placeholder="Token from your Cliq bot"
+                placeholderTextColor={COLORS.muted}
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+              <CardLabel>Cliq user email</CardLabel>
+              <TextInput
+                style={styles.input}
+                value={cliqUser}
+                onChangeText={setCliqUser}
+                placeholder="you@company.com"
+                placeholderTextColor={COLORS.muted}
+                autoCapitalize="none"
+                autoCorrect={false}
+                keyboardType="email-address"
+              />
+              <Text style={styles.hint}>
+                Alerts go to this user's chat with your bot (optional). The bot needs the
+                Notify-Me incoming webhook handler — see README.
+              </Text>
+            </>
+          )}
           <View style={{height: 12}} />
-          <PrimaryButton title="Save" onPress={saveWebhook} disabled={!urlDirty} />
+          <PrimaryButton title="Save" onPress={saveWebhook} disabled={!webhookDirty} />
         </Card>
 
         {/* Schedule */}
@@ -374,6 +425,15 @@ export default function App() {
   );
 }
 
+// Example URL per destination, shown in the empty webhook field.
+const PLACEHOLDERS: Record<string, string> = {
+  slack: 'https://hooks.slack.com/services/...',
+  discord: 'https://discord.com/api/webhooks/...',
+  teams: 'https://<tenant>.webhook.office.com/...',
+  cliq: 'https://cliq.zoho.com/api/v2/bots/<bot>/incoming',
+  generic: 'https://example.com/webhook',
+};
+
 const styles = StyleSheet.create({
   screen: {flex: 1, backgroundColor: COLORS.bg},
   center: {alignItems: 'center', justifyContent: 'center'},
@@ -421,6 +481,7 @@ const styles = StyleSheet.create({
   callerText: {fontSize: 13, color: COLORS.muted, lineHeight: 19},
   batteryState: {fontSize: 13, fontWeight: '600', lineHeight: 19},
   noteText: {fontSize: 13, color: COLORS.muted, lineHeight: 19, marginTop: 10},
+  hint: {fontSize: 12, color: COLORS.muted, lineHeight: 17, marginTop: -8},
   link: {color: COLORS.accent, fontWeight: '600', marginTop: 6, fontSize: 13},
   sectionTitle: {fontSize: 18, fontWeight: '700', color: COLORS.text, marginBottom: 8},
   clear: {color: COLORS.danger, fontWeight: '600', fontSize: 13},

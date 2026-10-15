@@ -57,6 +57,8 @@ class NotifyMeModule(private val reactContext: ReactApplicationContext) :
         val map = Arguments.createMap().apply {
             putString("url", ConfigStore.getWebhookUrl(ctx))
             putString("platform", ConfigStore.getPlatform(ctx))
+            putString("cliqUser", ConfigStore.getCliqUser(ctx))
+            putString("cliqToken", ConfigStore.getCliqToken(ctx))
             putBoolean("masterEnabled", ConfigStore.isMasterEnabled(ctx))
             putInt("startMin", ConfigStore.getStartMinute(ctx))
             putInt("endMin", ConfigStore.getEndMinute(ctx))
@@ -113,6 +115,12 @@ class NotifyMeModule(private val reactContext: ReactApplicationContext) :
 
     @ReactMethod
     fun setPlatform(platform: String) = ConfigStore.setPlatform(reactContext, platform)
+
+    @ReactMethod
+    fun setCliqUser(user: String) = ConfigStore.setCliqUser(reactContext, user)
+
+    @ReactMethod
+    fun setCliqToken(token: String) = ConfigStore.setCliqToken(reactContext, token)
 
     @ReactMethod
     fun setMasterEnabled(enabled: Boolean) = ConfigStore.setMasterEnabled(reactContext, enabled)

@@ -3,7 +3,8 @@ package com.notifyme;
 /**
  * One notification's content, in structured form so each platform can render it its
  * own way: Slack/Teams/Generic flatten it to a single line; Discord builds a colored
- * embed from the parts. Built by CallEventWorker (calls) and WebhookWorker (test).
+ * embed and Cliq a titled card from the parts. Built by CallEventWorker (calls) and
+ * WebhookWorker (test).
  */
 public final class Alert {
 
@@ -45,7 +46,7 @@ public final class Alert {
         }
     }
 
-    /** Short title for card-style platforms (Discord embed). */
+    /** Short title for card-style platforms (Discord embed, Cliq card). */
     public String title() {
         switch (kind) {
             case INCOMING: return "📞 Incoming call";

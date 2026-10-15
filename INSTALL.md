@@ -35,7 +35,9 @@ JAVA_HOME=/opt/homebrew/opt/openjdk@17 ./gradlew :app:assembleDebug
 ## First run (Android rules — same as the native app)
 1. **Open the app once** after install — Android keeps a fresh app "stopped" and won't
    deliver `PHONE_STATE` until first launch (survives reboots after that).
-2. Paste your webhook URL, pick the platform (Slack / Discord / Teams / Generic), **Save**.
+2. Paste your webhook URL, pick the platform (Slack / Discord / Teams / Zoho Cliq / Generic), **Save**.
+   For Zoho Cliq also enter the bot's webhook token (and optionally your Cliq email), and add the
+   bot handler from `docs/zoho-cliq-incoming-handler.deluge` — see *Zoho Cliq Setup* in `README.md`.
 3. **Send test message** → confirm it lands in your channel.
 4. Turn **Notifications** on → grant phone-state / call-log / contacts (+ notifications on 13+).
 5. Optionally **Enable caller ID** (screening role) so incoming alerts show the number.

@@ -8,12 +8,37 @@ This project is a high-performance **React Native port** of a native Android eng
 
 ## 🚀 Key Features
 
-- **Webhook Integration:** Supports Discord, Slack, Microsoft Teams, and Generic JSON payloads.
+- **Webhook Integration:** Supports Discord, Slack, Microsoft Teams, Zoho Cliq (bot incoming webhook), and Generic JSON payloads.
 - **Background Call Detection:** Native Android receivers monitor phone states (`RINGING`, `IDLE`, `OFFHOOK`).
 - **Call Screening:** Integrated with Android's `RoleManager` to provide caller identification.
 - **Smart Scheduling:** Configure "Active Hours" to only receive notifications during specific times (e.g., during work hours).
 - **History Tracking:** Local logs of all call events and their delivery status.
 - **Battery Efficient:** Uses Android WorkManager for reliable, battery-aware webhook delivery.
+
+---
+
+## 💬 Zoho Cliq Setup
+
+Cliq alerts go to your bot's **Incoming Webhook**: Notify-Me posts the call details, and a small Deluge handler in the bot turns them into a card in the bot chat. Works with company custom domains (e.g. `cliq.mycompany.com`).
+
+1. **Copy the endpoint and token** from your bot (**Bots & Tools** → **Bots** → your bot):
+   - Incoming webhook endpoint, e.g. `https://cliq.mycompany.com/api/v2/bots/notify/incoming`
+   - Webhook token. If your bot page doesn't show one, generate it under profile → **Bots & Tools** → **Webhook Tokens**.
+2. **Add the handler:** open the bot → **Edit Handlers** → **Incoming Webhook Handler**, paste [`docs/zoho-cliq-incoming-handler.deluge`](docs/zoho-cliq-incoming-handler.deluge), **Save**.
+3. **In the app:** pick **Zoho Cliq**, paste the endpoint into **Webhook URL** and the token into **Webhook token** (the app adds `?zapikey=<token>` when sending). Optionally enter your **Cliq user email** so the alert goes only to you. **Save**, then **Send test message**.
+
+To check from a computer first:
+```bash
+curl -i -X POST "https://cliq.mycompany.com/api/v2/bots/notify/incoming?zapikey=<token>" \
+  -H "Content-Type: application/json" \
+  -d '{"kind":"test","title":"✅ Test","caller":"","time":"20:00","text":"Your webhook works."}'
+```
+
+**Troubleshooting** (the app's *Recent* list shows the HTTP code on failure):
+- `HTTP 401`: wrong or disabled token.
+- `HTTP 404`: wrong URL or bot name.
+- `2xx` but nothing in Cliq: the handler isn't saved, or isn't returning a message.
+- Fails only with an email set: clear **Cliq user email** and try again.
 
 ---
 

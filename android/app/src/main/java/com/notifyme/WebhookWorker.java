@@ -9,6 +9,7 @@ import androidx.work.WorkerParameters;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -45,7 +46,7 @@ public class WebhookWorker extends Worker {
         if (ConfigStore.getWebhookUrl(ctx).trim().isEmpty()) return Result.failure();
 
         long timestamp = getInputData().getLong(KEY_TIMESTAMP, System.currentTimeMillis());
-        String body = PlatformFormatter.payload(ConfigStore.getPlatform(ctx), Alert.test(timestamp));
+        String body = PlatformFormatter.payload(ctx, Alert.test(timestamp));
 
         try {
             int code = postBody(ctx, body);
@@ -69,9 +70,24 @@ public class WebhookWorker extends Worker {
         return new SimpleDateFormat("HH:mm", Locale.getDefault()).format(new Date(timestamp));
     }
 
+    /**
+     * The URL to POST to: the saved webhook, plus Cliq's ?zapikey=<token> when the
+     * token is kept in its own field and not already in the URL.
+     */
+    static String targetUrl(Context ctx) throws Exception {
+        String url = ConfigStore.getWebhookUrl(ctx);
+        String token = ConfigStore.getCliqToken(ctx);
+        if (!ConfigStore.PLATFORM_CLIQ.equals(ConfigStore.getPlatform(ctx))
+                || token.isEmpty() || url.contains("zapikey=")) {
+            return url;
+        }
+        return url + (url.contains("?") ? "&" : "?")
+                + "zapikey=" + URLEncoder.encode(token, "UTF-8");
+    }
+
     /** POST a ready-built JSON body to the saved webhook; return HTTP status. */
     public static int postBody(Context ctx, String json) throws Exception {
-        String url = ConfigStore.getWebhookUrl(ctx);
+        String url = targetUrl(ctx);
         HttpURLConnection conn = null;
         try {
             conn = (HttpURLConnection) new URL(url).openConnection();
