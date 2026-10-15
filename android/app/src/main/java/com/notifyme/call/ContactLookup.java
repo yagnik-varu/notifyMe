@@ -1,4 +1,4 @@
-package com.notifyme;
+package com.notifyme.call;
 
 import android.Manifest;
 import android.content.Context;
@@ -10,9 +10,14 @@ import android.provider.ContactsContract.PhoneLookup;
 import androidx.core.content.ContextCompat;
 
 /**
- * Resolves a caller/sender display name from a phone number via the system
- * contacts (PhoneLookup). Falls back to the raw number when there's no match,
- * no number, or READ_CONTACTS isn't granted.
+ * ContactLookup — turns a phone number into a contact name, if it's saved on the phone.
+ *
+ * <p>Who calls it: {@link CallEventWorker#doWork()} (via resolveLabel) when the call log
+ * didn't already have a cached name.
+ *
+ * <p>How: queries the Contacts provider's PhoneLookup table, which matches numbers
+ * loosely (with/without country code, spaces, dashes). Falls back to the raw number when
+ * there's no match, no number, or READ_CONTACTS isn't granted.
  */
 public final class ContactLookup {
 

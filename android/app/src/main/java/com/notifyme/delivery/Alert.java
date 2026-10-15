@@ -1,19 +1,33 @@
-package com.notifyme;
+package com.notifyme.delivery;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
 /**
- * One notification's content, in structured form so each platform can render it its
- * own way: Slack/Teams/Generic flatten it to a single line; Discord builds a colored
- * embed and Cliq a titled card from the parts. Built by CallEventWorker (calls) and
- * WebhookWorker (test).
+ * Alert — the content of one notification, kept structured (kind + caller + time) so each
+ * destination can render it its own way: Slack/Teams/Generic flatten it to one line;
+ * Discord builds a colored embed and Cliq a titled card from the parts.
+ *
+ * <p>Who creates it: {@code call/CallEventWorker} (incoming / missed calls) and
+ * {@link TestWebhookWorker} (the "Send test" button). Who reads it: the classes in
+ * {@code delivery/destinations/} and {@link Delivery} (for the history row).
+ *
+ * <p>Immutable: all fields are final.
  */
 public final class Alert {
 
+    // WHY plain ints instead of an enum: kept from the original code; kindName() gives
+    // the stable string used in payloads and history.
     public static final int INCOMING = 0;
     public static final int MISSED = 1;
     public static final int TEST = 2;
 
+    /** One of INCOMING / MISSED / TEST. */
     public final int kind;
-    public final String caller;   // display label; may be "" when unknown
+    /** Display label, e.g. "Jane (+1555…)", or "" when the number is unknown. */
+    public final String caller;
+    /** When the phone started ringing (or when the test was requested), epoch ms. */
     public final long timestamp;
 
     public Alert(int kind, String caller, long timestamp) {
@@ -22,6 +36,7 @@ public final class Alert {
         this.timestamp = timestamp;
     }
 
+    /** A test alert (no caller). */
     public static Alert test(long timestamp) {
         return new Alert(TEST, "", timestamp);
     }
@@ -35,15 +50,24 @@ public final class Alert {
         }
     }
 
+    /** "HH:mm" in the phone's time zone, e.g. "14:05". */
     public String timeStr() {
-        return WebhookWorker.timeOf(timestamp);
+        return timeOf(timestamp);
     }
 
+    /** Formats an epoch-ms time as 24-hour "HH:mm" in the phone's time zone. */
+    public static String timeOf(long timestamp) {
+        // WHY a new SimpleDateFormat each call: the class is not thread-safe, and workers
+        // run on background threads.
+        return new SimpleDateFormat("HH:mm", Locale.getDefault()).format(new Date(timestamp));
+    }
+
+    /** The caller, or "number unavailable" when we couldn't find it. */
     public String shownCaller() {
         return caller.isEmpty() ? "number unavailable" : caller;
     }
 
-    /** One-line text used by Slack/Teams/Generic and the in-app history label. */
+    /** One-line text used by Slack/Teams/Generic. */
     public String plainText() {
         switch (kind) {
             case INCOMING:
@@ -64,7 +88,7 @@ public final class Alert {
         }
     }
 
-    /** Discord embed accent color (decimal). Green / red / blurple. */
+    /** Discord embed accent color (decimal RGB). Green / red / blurple. */
     public int color() {
         switch (kind) {
             case INCOMING: return 3066993;   // #2ECC71 green

@@ -1,4 +1,4 @@
-package com.notifyme;
+package com.notifyme.call;
 
 import android.Manifest;
 import android.content.Context;
@@ -9,12 +9,21 @@ import android.provider.CallLog;
 import androidx.core.content.ContextCompat;
 
 /**
- * Reads the most recent incoming call entry from the system call log. This is the
- * number source when the app is NOT the dialer/screening app: EXTRA_INCOMING_NUMBER
- * is empty on Android 10+, but the call log carries NUMBER, CACHED_NAME and TYPE.
+ * CallLogLookup — reads the most recent entry from the phone's call log.
  *
- * Timing note: some OEMs write the row at ring, others when the call ends. The
- * caller (CallEventWorker) polls this for a few seconds to ride out that delay.
+ * <p>Who calls it: {@link CallEventWorker}, repeatedly, while it waits for the number.
+ *
+ * <p>WHY: this is the number source when the app is NOT the dialer/screening app.
+ * EXTRA_INCOMING_NUMBER is empty on Android 10+, but the call log carries NUMBER,
+ * CACHED_NAME (the name the dialer matched) and TYPE (incoming / missed / rejected…).
+ *
+ * <p>How: Android exposes the call log as a "content provider" — a database you query
+ * through {@code getContentResolver().query(...)} with columns, a WHERE clause and an
+ * ORDER BY, and read back with a Cursor (a row-by-row result pointer).
+ *
+ * <p>⚠ GOTCHA (timing): some OEMs write the row at ring, others only when the call ends.
+ * The caller polls this for a few seconds to ride out that delay.
+ * Needs the READ_CALL_LOG permission; returns null without it.
  */
 public final class CallLogLookup {
 

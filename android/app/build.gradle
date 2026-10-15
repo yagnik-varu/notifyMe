@@ -119,4 +119,11 @@ dependencies {
     } else {
         implementation jscFlavor
     }
+
+    // ---- JVM unit tests (android/app/src/test, run with ./gradlew :app:testDebugUnitTest) ----
+    testImplementation("junit:junit:4.13.2")
+    // WHY: unit tests run on your computer's JVM, not a phone. There, android.jar only
+    // contains empty stubs, so org.json.JSONObject would throw "Method ... not mocked".
+    // Adding the real org.json library makes payload-building code testable.
+    testImplementation("org.json:json:20240303")
 }

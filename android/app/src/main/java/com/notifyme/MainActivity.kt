@@ -5,6 +5,13 @@ import com.facebook.react.ReactActivityDelegate
 import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.fabricEnabled
 import com.facebook.react.defaults.DefaultReactActivityDelegate
 
+/**
+ * MainActivity — the single Android screen. React Native draws the whole UI inside it,
+ * so there's nothing app-specific here (React Native template code).
+ *
+ * Launched from the home-screen icon (see the LAUNCHER intent-filter in
+ * AndroidManifest.xml).
+ */
 class MainActivity : ReactActivity() {
 
   /**

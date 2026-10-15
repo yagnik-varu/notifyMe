@@ -1,81 +1,51 @@
-package com.notifyme;
+package com.notifyme.schedule;
 
 import android.content.Context;
 
-import java.util.Calendar;
+import com.notifyme.storage.ConfigStore;
 
 /**
- * Single decision point for "should an event fire right now?". Both receivers
- * consult this before enqueuing any webhook. Priority:
+ * EventGate — the single "should an event fire right now?" check, using saved settings.
  *
- *   1. No webhook URL configured        -> false
- *   2. Override FORCE_ON (not expired)  -> true   (ignore schedule)
- *   3. Override PAUSE    (not expired)  -> false  (mute even in office hours)
- *   4. Otherwise: master enabled AND inside the weekly office-hour window
+ * <p>Who calls it: {@code call/PhoneStateReceiver} (before queueing work, to skip
+ * pointless jobs), {@code call/CallEventWorker} (again, right before sending, because
+ * settings may have changed while the job waited for network), and
+ * {@code bridge/NotifyMeModule.getStatus} (to show "Watching for calls" in the UI).
  *
- * Expired overrides are treated as NONE (and lazily cleared).
+ * <p>What it calls: {@link ConfigStore} for the values and {@link ScheduleRules} for the
+ * actual decision. The rules themselves are documented in ScheduleRules.
  */
 public final class EventGate {
 
     private EventGate() {}
 
+    /** Decision for this exact moment. */
     public static boolean shouldFire(Context ctx) {
         return shouldFire(ctx, System.currentTimeMillis());
     }
 
-    /** Testable variant with an injected clock. */
+    /** Decision for a given moment (handy when you want a fixed clock). */
     public static boolean shouldFire(Context ctx, long nowMs) {
+        // Nowhere to send to → nothing to do.
         if (ConfigStore.getWebhookUrl(ctx).trim().isEmpty()) return false;
 
         String mode = ConfigStore.getOverrideMode(ctx);
         long until = ConfigStore.getOverrideUntil(ctx);
-        boolean overrideActive = !ConfigStore.OVERRIDE_NONE.equals(mode) && nowMs < until;
 
-        if (!overrideActive && !ConfigStore.OVERRIDE_NONE.equals(mode)) {
-            // Override window passed — clear it so the UI reflects reality.
+        if (!ScheduleRules.isOverrideActive(mode, until, nowMs)
+                && !ConfigStore.OVERRIDE_NONE.equals(mode)) {
+            // WHY: an expired override ("Pause until midnight" after midnight) is cleared
+            // lazily here, the next time anyone asks — there is no timer for it. That way
+            // the UI's "Today" switch also snaps back to "Schedule".
             ConfigStore.clearOverride(ctx);
         }
 
-        if (overrideActive) {
-            if (ConfigStore.OVERRIDE_FORCE_ON.equals(mode)) return true;
-            if (ConfigStore.OVERRIDE_PAUSE.equals(mode)) return false;
-        }
-
-        if (!ConfigStore.isMasterEnabled(ctx)) return false;
-        return withinSchedule(ctx, nowMs);
-    }
-
-    public static boolean withinSchedule(Context ctx, long nowMs) {
-        Calendar cal = Calendar.getInstance();
-        cal.setTimeInMillis(nowMs);
-
-        int dow = cal.get(Calendar.DAY_OF_WEEK) - 1; // 0=Sun .. 6=Sat
-        int minuteOfDay = cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE);
-
-        int start = ConfigStore.getStartMinute(ctx);
-        int end = ConfigStore.getEndMinute(ctx);
-        int daysMask = ConfigStore.getDaysMask(ctx);
-
-        if (start == end) return false; // empty window
-
-        if (start < end) {
-            // Same-day window, e.g. 09:00–18:00.
-            if (!isDayEnabled(daysMask, dow)) return false;
-            return minuteOfDay >= start && minuteOfDay < end;
-        } else {
-            // Overnight window, e.g. 22:00–06:00. The "day" is the day the window
-            // STARTED on, so the early-morning tail belongs to the previous day's bit.
-            if (minuteOfDay >= start) {
-                return isDayEnabled(daysMask, dow);
-            } else if (minuteOfDay < end) {
-                int prevDow = (dow + 6) % 7;
-                return isDayEnabled(daysMask, prevDow);
-            }
-            return false;
-        }
-    }
-
-    private static boolean isDayEnabled(int mask, int dow) {
-        return (mask & (1 << dow)) != 0;
+        return ScheduleRules.shouldFire(
+                mode, until,
+                ConfigStore.isMasterEnabled(ctx),
+                ConfigStore.getStartMinute(ctx),
+                ConfigStore.getEndMinute(ctx),
+                ConfigStore.getDaysMask(ctx),
+                nowMs);
     }
 }

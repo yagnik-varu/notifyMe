@@ -1,3 +1,16 @@
+<!--
+  AndroidManifest.xml — the app's "declaration" to Android: which permissions it asks
+  for and which entry points (activity, receiver, service) the SYSTEM may start.
+
+  Entry points declared here (Android creates these, our code never does):
+    .MainApplication          app process start
+    .MainActivity             the screen (React Native UI)
+    .call.PhoneStateReceiver  phone rang / answered / hung up  → start of every alert
+    .call.CallScreenService   caller-ID at ring time (only while we hold the screening role)
+
+  ⚠ GOTCHA: android:name values are class names. Moving a class to another package
+  means updating it here, or the app crashes / silently stops receiving events.
+-->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
@@ -36,9 +49,10 @@
       </activity>
 
       <!-- Call detector. exported=true because the system sends the broadcast.
-           Works across reboots automatically once the app is launched once. -->
+           ⚠ Android won't deliver it until the app has been opened once after install;
+           after that it works across reboots automatically. -->
       <receiver
-          android:name=".PhoneStateReceiver"
+          android:name=".call.PhoneStateReceiver"
           android:enabled="true"
           android:exported="true">
           <intent-filter>
@@ -50,12 +64,17 @@
            holds ROLE_CALL_SCREENING (API 29+). BIND_SCREENING_SERVICE is enforced by
            the system, so no <uses-permission> is needed. -->
       <service
-          android:name=".CallScreenService"
+          android:name=".call.CallScreenService"
           android:permission="android.permission.BIND_SCREENING_SERVICE"
           android:exported="true">
           <intent-filter>
               <action android:name="android.telecom.CallScreeningService" />
           </intent-filter>
       </service>
+
+      <!-- Background jobs (call/CallEventWorker, delivery/TestWebhookWorker) don't need
+           entries here: WorkManager registers its own components. Note WorkManager saves
+           worker class names with queued jobs, so moving a worker class orphans any job
+           queued at the moment of the upgrade. -->
     </application>
 </manifest>

@@ -1,4 +1,4 @@
-package com.notifyme;
+package com.notifyme.call;
 
 import android.content.Context;
 
@@ -6,19 +6,35 @@ import androidx.annotation.NonNull;
 import androidx.work.Worker;
 import androidx.work.WorkerParameters;
 
+import com.notifyme.delivery.Alert;
+import com.notifyme.delivery.Delivery;
+import com.notifyme.schedule.EventGate;
+import com.notifyme.storage.ConfigStore;
+
 /**
- * Resolves a call's number/name from the call log and delivers the alert. Enqueued by
- * PhoneStateReceiver:
- *   - MODE_RING  on an incoming ring        -> "📞 Incoming call from <X> at HH:mm"
- *   - MODE_ENDED when a ringing call ends    -> "📵 Missed call from <X>" (only if missed;
- *                                               answered calls were already alerted at ring)
+ * CallEventWorker — background job that figures out WHO is calling and sends the alert.
  *
- * The number isn't in the PHONE_STATE broadcast on Android 10+, and another app may own
- * the caller-ID role, so we poll CallLog for a few seconds to pick up NUMBER/CACHED_NAME
- * once the OS writes the row.
+ * <p>Who queues it: {@link PhoneStateReceiver}, in two modes:
+ * <ul>
+ *   <li>MODE_RING on an incoming ring → "📞 Incoming call from &lt;X&gt; at HH:mm"</li>
+ *   <li>MODE_ENDED when a ringing call ends → "📵 Missed call from &lt;X&gt;" — only if it
+ *       was really missed (answered calls were already alerted at ring)</li>
+ * </ul>
+ *
+ * <p>What it calls: {@link CallScreenService} (cached number), {@link CallLogLookup},
+ * {@link ContactLookup} (name for a number), then {@link Delivery#deliver}.
+ *
+ * <p>⚠ GOTCHA: the number isn't in the PHONE_STATE broadcast on Android 10+, and another
+ * app may own the caller-ID role, so we poll the call log for up to ~18 s until the OS
+ * writes the row. Some manufacturers only write it when the call ends.
+ *
+ * <p>⚠ GOTCHA: WorkManager stores this class's full name with each queued job. It used to
+ * be {@code com.notifyme.CallEventWorker}; an alert queued at the exact moment of upgrading
+ * from that version won't run afterwards. Don't rename/move workers casually.
  */
 public class CallEventWorker extends Worker {
 
+    // Input-data keys (filled in by PhoneStateReceiver.enqueue).
     public static final String KEY_MODE = "mode";          // ring | ended
     public static final String KEY_RING_TS = "ring_ts";
     public static final String KEY_WAS_MISSED = "was_missed";
@@ -34,11 +50,13 @@ public class CallEventWorker extends Worker {
         super(context, params);
     }
 
+    /** Runs on a WorkManager background thread, so sleeping/polling here is fine. */
     @NonNull
     @Override
     public Result doWork() {
         Context ctx = getApplicationContext();
         if (ConfigStore.getWebhookUrl(ctx).trim().isEmpty()) return Result.success();
+        // WHY check again: the job may have waited for network; settings could have changed.
         if (!EventGate.shouldFire(ctx)) return Result.success();  // gated off — not an error
 
         String mode = getInputData().getString(KEY_MODE);
@@ -58,6 +76,7 @@ public class CallEventWorker extends Worker {
                 screenedNumber = CallScreenService.lastNumber;
                 break;
             }
+            // 3 s of slack: the call-log DATE can be slightly earlier than our ring time.
             entry = CallLogLookup.latestSince(ctx, ringTs - 3000L);
             if (entry != null && !entry.number.isEmpty()) break;
             if (legacyNumber != null && !legacyNumber.isEmpty()) break;  // have a fallback already
@@ -77,7 +96,7 @@ public class CallEventWorker extends Worker {
         String label = resolveLabel(ctx, entry, screenedNumber, legacyNumber);
         Alert alert = new Alert(
                 MODE_ENDED.equals(mode) ? Alert.MISSED : Alert.INCOMING, label, ringTs);
-        return WebhookWorker.deliver(ctx, alert, label, getRunAttemptCount());
+        return Delivery.deliver(ctx, alert, label, getRunAttemptCount());
     }
 
     /**
