@@ -1,126 +1,59 @@
-# NotifyMe (React Native) 📞 🔔
+# Notify-Me (React Native)
 
-NotifyMe is a specialized utility that detects incoming/missed phone calls and sends real-time alerts to your preferred communication platforms via **Webhooks**. 
+Notify-Me is an Android app that notices incoming and missed phone calls and posts them to your team chat through a **webhook**:
 
-This project is a high-performance **React Native port** of a native Android engine. It combines a modern TypeScript UI with a robust Java/Kotlin background service to ensure call detection works even when the app is closed.
+> 📞 Incoming call from Jane (+15550001111) at 14:05
+> 📵 Missed call from Jane (+15550001111) at 14:05
 
----
+The UI is React Native + TypeScript. Call detection and delivery are native Android code, so alerts keep working when the app is closed.
 
-## 🚀 Key Features
+## Features
 
-- **Webhook Integration:** Supports Discord, Slack, Microsoft Teams, Zoho Cliq (bot incoming webhook), and Generic JSON payloads.
-- **Background Call Detection:** Native Android receivers monitor phone states (`RINGING`, `IDLE`, `OFFHOOK`).
-- **Call Screening:** Integrated with Android's `RoleManager` to provide caller identification.
-- **Smart Scheduling:** Configure "Active Hours" to only receive notifications during specific times (e.g., during work hours).
-- **History Tracking:** Local logs of all call events and their delivery status.
-- **Battery Efficient:** Uses Android WorkManager for reliable, battery-aware webhook delivery.
+- **Destinations:** Slack, Discord, Microsoft Teams, Zoho Cliq (bot incoming webhook) and Generic JSON.
+- **Background call detection:** works with the app closed, after a reboot, and offline (the alert is sent once the network returns).
+- **Caller names:** from the call log, Contacts, or the caller-ID role (Android 10+).
+- **Office hours:** days and time window, including overnight windows, plus "Always on" / "Pause" for today.
+- **Activity log:** every delivery with a plain-language reason when one fails.
+- **Send test:** checks the full delivery path from inside the app.
 
----
+## Quick start
 
-## 💬 Zoho Cliq Setup
+Requirements: Node 22.11+, JDK 17, Android SDK (API 36), a real Android phone with USB debugging.
 
-Cliq alerts go to your bot's **Incoming Webhook**: Notify-Me posts the call details, and a small Deluge handler in the bot turns them into a card in the bot chat. Works with company custom domains (e.g. `cliq.mycompany.com`).
-
-1. **Copy the endpoint and token** from your bot (**Bots & Tools** → **Bots** → your bot):
-   - Incoming webhook endpoint, e.g. `https://cliq.mycompany.com/api/v2/bots/notify/incoming`
-   - Webhook token. If your bot page doesn't show one, generate it under profile → **Bots & Tools** → **Webhook Tokens**.
-2. **Add the handler:** open the bot → **Edit Handlers** → **Incoming Webhook Handler**, paste [`docs/zoho-cliq-incoming-handler.deluge`](docs/zoho-cliq-incoming-handler.deluge), **Save**.
-3. **In the app:** pick **Zoho Cliq**, paste the endpoint into **Webhook URL** and the token into **Webhook token** (the app adds `?zapikey=<token>` when sending). Optionally enter your **Cliq user email** so the alert goes only to you. **Save**, then **Send test message**.
-
-To check from a computer first:
 ```bash
-curl -i -X POST "https://cliq.mycompany.com/api/v2/bots/notify/incoming?zapikey=<token>" \
-  -H "Content-Type: application/json" \
-  -d '{"kind":"test","title":"✅ Test","caller":"","time":"20:00","text":"Your webhook works."}'
+npm install
+# tell Gradle where the SDK is:
+echo "sdk.dir=C\:\\Users\\YourName\\AppData\\Local\\Android\\Sdk" > android/local.properties
+
+npm start          # terminal 1: Metro (JS dev server)
+npm run android    # terminal 2: build + install on the phone
 ```
 
-**Troubleshooting.** *Send test* shows the result right under the button, and failed alerts appear in **Activity** with the reason:
-- *"Cliq didn't accept the webhook token"*: copy the token again from your bot.
-- *"Bot not found"*: check the endpoint URL and bot name.
-- *"Cliq couldn't read the message"*: the Notify-Me handler isn't saved in your bot.
-- *Test delivered* but nothing in Cliq: the handler isn't returning a message, or the email doesn't match a bot subscriber. Clear **Your Cliq email** and try again.
+Then, on the phone:
 
-Errors that a retry can't fix (bad token, wrong URL) are reported straight away. Network problems are retried in the background.
+1. **Open the app once.** Android won't report calls to an app that was never opened.
+2. Pick a destination, paste the webhook URL, **Save**, **Send test**.
+3. Turn alerts **on** and allow phone, call log and contacts access.
+4. Under **Reliability**, allow caller numbers and background running. On Samsung, Xiaomi, Oppo or OnePlus, also enable **Autostart** in the app's system settings.
 
----
+Zoho Cliq needs a bot token and a small handler script. See [Destinations → Zoho Cliq](docs/10-destinations.md).
 
-## 🛠️ Tech Stack
+## Checks
 
-- **Frontend:** React Native (0.86+), TypeScript, Lucide Icons.
-- **State Management:** React Hooks (Context-like pattern for configuration).
-- **Native Bridge:** Custom Kotlin Module (`NotifyMeModule`) to communicate between JS and Android OS.
-- **Native Android:** Kotlin, Java, WorkManager API, Telephony API.
-
----
-
-## 📂 Folder Structure Explanation
-
-For a web developer (Next.js), here is how the project is organized:
-
-```text
-NotifyMeRN/
-├── android/               # Native Android project (Java/Kotlin code lives here)
-│   └── app/src/main/java/com/notifyme/
-│       ├── NotifyMeModule.kt  # The "Bridge" (JS calls this file)
-│       └── ...Workers         # Background tasks (Java/Kotlin only)
-├── src/                   # React components and logic
-│   ├── ui/                # UI Elements (Buttons, Cards, Inputs)
-│   ├── theme.ts           # Styling constants (colors, spacing)
-│   └── NotifyMe.ts        # Business logic types
-├── App.tsx                # Main Entry Point (The "Root" of your app)
-├── index.js               # Low-level entry point (registers the app)
-└── package.json           # Dependencies and scripts
+```bash
+npx tsc --noEmit && npm run lint && npm test          # JS: types, lint, Jest
+cd android && ./gradlew :app:testDebugUnitTest         # Android: JUnit
 ```
 
----
+## Documentation
 
-## 🏁 Getting Started
+Start at **[docs/README.md](docs/README.md)**. It's a guided tour written for web developers new to React Native and Android:
 
-### Prerequisites
-- **Node.js:** 20+
-- **JDK:** 17 (Crucial for React Native 0.86)
-- **Android SDK:** Platform 34 and Build Tools.
+- how a ringing phone becomes a chat message, step by step
+- the project structure, file by file
+- the JS ↔ Android bridge, the Android background engine, and what's stored on the phone
+- guides: [add a destination](docs/guides/add-a-destination.md), [add a setting](docs/guides/add-a-setting.md), [add a native method](docs/guides/add-a-native-method.md)
 
-### Installation
-1. **Clone the repo.**
-2. **Install dependencies:**
-   ```bash
-   npm install
-   ```
-3. **Set up Environment:** Create a `android/local.properties` file and set your SDK path:
-   ```text
-   sdk.dir=C\:\\Users\\YourName\\AppData\\Local\\Android\\Sdk
-   ```
+## License
 
-### Running the App
-1. **Start the Metro Bundler (Terminal 1):**
-   ```bash
-   npm start
-   ```
-2. **Launch on Android Device (Terminal 2):**
-   ```bash
-   # Ensure your phone is connected via USB and ADB is enabled
-   npm run android
-   ```
-
----
-
-## 🔌 The Native Bridge
-
-This app is unique because it interacts with phone hardware. 
-- **The Native Side:** `NotifyMeModule.kt` handles things JavaScript can't do, like requesting "Caller ID" roles or checking "Battery Optimization" status.
-- **The JS Side:** `App.tsx` calls `NativeModules.NotifyMeModule.methodName()` to get this data.
-
----
-
-## ⚠️ Important Android Configuration
-
-To ensure the app works in the background:
-1. **Permissions:** Grant Phone, Call Log, and Contacts permissions on the first launch.
-2. **Battery Optimization:** Set the app to **"Unrestricted"** in Android Settings so the system doesn't kill the call listener.
-3. **Autostart:** (Xiaomi/Samsung) Enable "Autostart" in App Info.
-
----
-
-## 📝 License
 MIT
