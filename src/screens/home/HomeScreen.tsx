@@ -210,6 +210,14 @@ export function HomeScreen() {
 
   const allowBattery = () => NotifyMe.requestBatteryExemption();
 
+  const onToggleHideNumber = (value: boolean) => {
+    NotifyMe.haptic('tick');
+    NotifyMe.setHideNumber(value);
+    app.setCfg({...cfg, hideNumber: value});
+    showToast(value ? 'Hiding number when name is known' : 'Showing name and number');
+    app.reread();
+  };
+
   /** Clear right away and offer Undo (snackbar pattern) instead of an "Are you sure?" dialog. */
   const clearHistory = () => {
     const cleared = app.history;
@@ -303,8 +311,10 @@ export function HomeScreen() {
         <ReliabilitySection
           screening={app.screening}
           battery={app.battery}
+          hideNumber={cfg.hideNumber}
           onEnableCallerId={enableCallerId}
           onAllowBattery={allowBattery}
+          onToggleHideNumber={onToggleHideNumber}
         />
 
         <ActivitySection history={app.history} onClear={clearHistory} />

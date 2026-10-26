@@ -87,6 +87,7 @@ class NotifyMeModule(private val reactContext: ReactApplicationContext) :
             putString("cliqUser", ConfigStore.getCliqUser(ctx))
             putString("cliqToken", ConfigStore.getCliqToken(ctx))
             putBoolean("masterEnabled", ConfigStore.isMasterEnabled(ctx))
+            putBoolean("hideNumber", ConfigStore.isHideNumberEnabled(ctx))
             putInt("startMin", ConfigStore.getStartMinute(ctx))
             putInt("endMin", ConfigStore.getEndMinute(ctx))
             putInt("daysMask", ConfigStore.getDaysMask(ctx))
@@ -167,6 +168,10 @@ class NotifyMeModule(private val reactContext: ReactApplicationContext) :
     /** Turns alerts on/off (the switch on the status card). */
     @ReactMethod
     fun setMasterEnabled(enabled: Boolean) = ConfigStore.setMasterEnabled(reactContext, enabled)
+
+    /** Saves hide number setting. */
+    @ReactMethod
+    fun setHideNumber(enabled: Boolean) = ConfigStore.setHideNumberEnabled(reactContext, enabled)
 
     /** Saves office hours, as minutes after midnight. */
     @ReactMethod

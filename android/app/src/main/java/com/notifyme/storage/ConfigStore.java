@@ -35,6 +35,7 @@ public final class ConfigStore {
 
     // Master on/off switch (the toggle on the big status card)
     private static final String KEY_MASTER = "master_enabled";
+    private static final String KEY_HIDE_NUMBER = "hide_number_when_name_known";
 
     // Office-hour schedule (minutes-of-day, 0..1439; days bitmask Sun=bit0..Sat=bit6)
     private static final String KEY_START = "sched_start_min";
@@ -119,6 +120,16 @@ public final class ConfigStore {
     /** Turns alerts on or off. */
     public static void setMasterEnabled(Context ctx, boolean enabled) {
         prefs(ctx).edit().putBoolean(KEY_MASTER, enabled).apply();
+    }
+
+    /** True when the user wants to hide the phone number if a contact name exists. */
+    public static boolean isHideNumberEnabled(Context ctx) {
+        return prefs(ctx).getBoolean(KEY_HIDE_NUMBER, false);
+    }
+
+    /** Saves the hide-number setting. */
+    public static void setHideNumberEnabled(Context ctx, boolean enabled) {
+        prefs(ctx).edit().putBoolean(KEY_HIDE_NUMBER, enabled).apply();
     }
 
     // ---- Schedule ----

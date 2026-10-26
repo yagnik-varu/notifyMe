@@ -41,6 +41,7 @@ type NativeApi = {
   setCliqUser(user: string): void;
   setCliqToken(token: string): void;
   setMasterEnabled(enabled: boolean): void;
+  setHideNumber(enabled: boolean): void;
   setSchedule(startMin: number, endMin: number): void;
   setDaysMask(mask: number): void;
   setOverride(mode: string, untilMs: number): void;
@@ -88,6 +89,7 @@ const NotifyMe = {
   setCliqUser: (u: string) => Native.setCliqUser(u),
   setCliqToken: (t: string) => Native.setCliqToken(t),
   setMasterEnabled: (e: boolean) => Native.setMasterEnabled(e),
+  setHideNumber: (e: boolean) => Native.setHideNumber(e),
   /** Office hours in minutes since midnight. */
   setSchedule: (s: number, e: number) => Native.setSchedule(s, e),
   /** Office days bitmask (bit 0 = Sunday). */

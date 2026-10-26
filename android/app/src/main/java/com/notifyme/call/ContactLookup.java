@@ -9,6 +9,8 @@ import android.provider.ContactsContract.PhoneLookup;
 
 import androidx.core.content.ContextCompat;
 
+import com.notifyme.storage.ConfigStore;
+
 /**
  * ContactLookup — turns a phone number into a contact name, if it's saved on the phone.
  *
@@ -51,6 +53,9 @@ public final class ContactLookup {
         String name = nameFor(ctx, number);
         boolean hasNum = number != null && !number.trim().isEmpty();
         if (name != null) {
+            if (ConfigStore.isHideNumberEnabled(ctx)) {
+                return name;
+            }
             return hasNum ? name + " (" + number + ")" : name;
         }
         return hasNum ? number : "";

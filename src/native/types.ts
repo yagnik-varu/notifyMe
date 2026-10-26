@@ -32,6 +32,8 @@ export interface Config {
   cliqToken: string;
   /** The big on/off switch at the top of the screen. */
   masterEnabled: boolean;
+  /** Hide phone number when contact name is available. */
+  hideNumber: boolean;
   /** Office hours start, in minutes since midnight (540 = 09:00). */
   startMin: number;
   /** Office hours end, in minutes since midnight. Smaller than start = overnight window. */

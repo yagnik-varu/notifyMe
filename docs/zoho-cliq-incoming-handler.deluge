@@ -7,13 +7,26 @@
 //   title   "📞 Incoming call" / "📵 Missed call" / "✅ Test"
 //   text    ready-to-show Cliq markdown, e.g. "*Jane (+1555…)* at 14:05"
 //   userids recipient email (only when set in the app)
+
 data = body.toMap();
-message = Map();
-message.put("text",ifnull(data.get("text"),""));
-message.put("card",{"title":ifnull(data.get("title"),"Call alert"),"theme":"modern-inline"});
-userids = ifnull(data.get("userids"),"");
-if(userids != "")
-{
-	message.put("userids",userids);
+
+caller = ifnull(data.get("caller"), "");
+textMsg = ifnull(data.get("text"), "");
+
+// DYNAMIC HIDE NUMBER: If caller has a name and number formatted as "Jane (+1555123)", extract only "Jane"
+if (caller.contains(" (")) {
+    cleanName = caller.subString(0, caller.indexOf(" ("));
+    timeVal = ifnull(data.get("time"), "");
+    textMsg = "*" + cleanName + "* at " + timeVal;
 }
+
+message = Map();
+message.put("text", textMsg);
+message.put("card", {"title": ifnull(data.get("title"), "Call alert"), "theme": "modern-inline"});
+
+userids = ifnull(data.get("userids"), "");
+if (userids != "") {
+	message.put("userids", userids);
+}
+
 return message;

@@ -106,6 +106,9 @@ public class CallEventWorker extends Worker {
     private String resolveLabel(Context ctx, CallLogLookup.Entry entry,
                                 String screenedNumber, String legacyNumber) {
         if (entry != null && !entry.cachedName.isEmpty()) {
+            if (ConfigStore.isHideNumberEnabled(ctx)) {
+                return entry.cachedName;
+            }
             return entry.number.isEmpty()
                     ? entry.cachedName : entry.cachedName + " (" + entry.number + ")";
         }

@@ -11,8 +11,8 @@
  * Background reading: docs/08-android-engine.md.
  */
 import React from 'react';
-import {Linking, StyleSheet} from 'react-native';
-import {BatteryCharging, ChevronRight, IdCard, Settings} from 'lucide-react-native';
+import {Linking, StyleSheet, Switch} from 'react-native';
+import {BatteryCharging, ChevronRight, EyeOff, IdCard, Settings} from 'lucide-react-native';
 import {Battery, Screening} from '../../../native';
 import {Palette, SPACE, useStyles} from '../../../theme';
 import {Button, Card, Pill, SectionHeader, SettingRow} from '../../../ui';
@@ -20,11 +20,13 @@ import {Button, Card, Pill, SectionHeader, SettingRow} from '../../../ui';
 export function ReliabilitySection(props: {
   screening: Screening | null;
   battery: Battery | null;
+  hideNumber: boolean;
   onEnableCallerId: () => void;
   onAllowBattery: () => void;
+  onToggleHideNumber: (value: boolean) => void;
 }) {
   const [s, c] = useStyles(styles);
-  const {screening, battery} = props;
+  const {screening, battery, hideNumber} = props;
   return (
     <>
       <SectionHeader title="Reliability" />
@@ -65,6 +67,25 @@ export function ReliabilitySection(props: {
             ) : (
               <Button title="Allow" compact onPress={props.onAllowBattery} />
             )
+          }
+        />
+        <SettingRow
+          icon={EyeOff}
+          tone={hideNumber ? 'accent' : 'neutral'}
+          title="Hide number if name known"
+          subtitle={
+            hideNumber
+              ? 'Shows only contact name when saved.'
+              : 'Shows both contact name and phone number.'
+          }
+          right={
+            <Switch
+              value={hideNumber}
+              onValueChange={props.onToggleHideNumber}
+              trackColor={{false: c.trackOff, true: c.accent}}
+              thumbColor="#FFFFFF"
+              accessibilityLabel="Hide number if name known"
+            />
           }
         />
         <SettingRow
